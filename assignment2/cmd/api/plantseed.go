@@ -9,7 +9,7 @@ import (
 	"golang.assignment2.com/internal/validator"
 )
 
-func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) createPlantseedHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Name   string `json:"name"`
 		Family string `json:"family"`
@@ -35,7 +35,7 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 	fmt.Fprintf(w, "%+v\n", input)
 }
 
-func (app *application) showMovieHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) showPlantseedHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIDParam(r)
 	if err != nil {
 		app.notFoundResponse(w, r)

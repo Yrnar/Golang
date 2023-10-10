@@ -11,7 +11,7 @@ func (app *application) routes() *httprouter.Router {
 	router.NotFound = http.HandlerFunc(app.notFoundResponse)
 	router.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowedResponse)
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
-	router.HandlerFunc(http.MethodPost, "/v1/plantseed", app.createMovieHandler)
-	router.HandlerFunc(http.MethodGet, "/v1/plantseed/:id", app.showMovieHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/plantseed", app.createPlantseedHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/plantseed/:id", app.showPlantseedHandler)
 	return router
 }
