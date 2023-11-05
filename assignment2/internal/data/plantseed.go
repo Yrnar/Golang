@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"golang.assignment2.com/internal/validator"
@@ -121,4 +122,48 @@ func (m PlantseedModel) Delete(id int64) error {
 		return ErrRecordNotFound
 	}
 	return nil
+}
+
+func (m PlantseedModel) GetAll(name string, family string, amount int, price int, filters Filters) ([]*Plantseed, Metadata, error) {
+	query := fmt.Sprintf(`
+		SELECT  count(*) OVER(), id, created_at, name, family, amount, price
+		FROM plantseed
+		WHERE (to_tsvector('simple', name) @@ plainto_tsquery('simple', $1) OR $1 = '')
+		AND (to_tsvector('simple', family) @@ plainto_tsquery('simple', $2) OR $2 = '')
+		ORDER  BY %s %s, id ASC
+		LIMIT $3 OFFSET $4`, filters.sortColumn(), filters.sortDirection())
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	args := []interface{}{name, family, filters.limit(), filters.offset()}
+
+	rows, err := m.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+	defer rows.Close()
+	totalRecords := 0
+
+	plantseeds := []*Plantseed{}
+	for rows.Next() {
+		var plantseed Plantseed
+		err := rows.Scan(
+			&totalRecords,
+			&plantseed.ID,
+			&plantseed.CreatedAt,
+			&plantseed.Name,
+			&plantseed.Family,
+			&plantseed.Amount,
+			&plantseed.Price,
+		)
+		if err != nil {
+			return nil, Metadata{}, err
+		}
+
+		plantseeds = append(plantseeds, &plantseed)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, Metadata{}, err
+	}
+	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+	return plantseeds, metadata, nil
 }

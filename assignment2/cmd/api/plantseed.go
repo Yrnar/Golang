@@ -150,3 +150,39 @@ func (app *application) deletePlantseedHandler(w http.ResponseWriter, r *http.Re
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) listPlantseedHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Name   string
+		Family string
+		Amount int
+		Price  int
+		data.Filters
+	}
+	v := validator.New()
+	qs := r.URL.Query()
+	input.Name = app.readString(qs, "name", "")
+	input.Family = app.readString(qs, "family", "")
+	input.Amount = app.readInt(qs, "amount", 1, v)
+	input.Price = app.readInt(qs, "price", 1, v)
+
+	input.Filters.Page = app.readInt(qs, "page", 1, v)
+	input.Filters.PageSize = app.readInt(qs, "page_size", 20, v)
+
+	input.Filters.Sort = app.readString(qs, "sort", "id")
+	input.Filters.SortSafelist = []string{"id", "name", "family", "amount", "price", "-id", "-name", "-family", "-amount", "-price"}
+
+	if data.ValidateFilters(v, input.Filters); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+	plantseeds, metadata, err := app.models.Plantseed.GetAll(input.Name, input.Family, input.Amount, input.Price, input.Filters)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	err = app.writeJSON(w, http.StatusOK, envelope{"plantseeds": plantseeds,  "metadata": metadata}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
