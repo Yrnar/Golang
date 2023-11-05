@@ -6,7 +6,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func (app *application) routes() *httprouter.Router {
+func (app *application) routes() http.Handler {
 	router := httprouter.New()
 	router.NotFound = http.HandlerFunc(app.notFoundResponse)
 	router.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowedResponse)
@@ -17,5 +17,6 @@ func (app *application) routes() *httprouter.Router {
 	router.HandlerFunc(http.MethodPatch, "/v1/plantseed/:id", app.updatePlantseedHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/plantseed/:id", app.deletePlantseedHandler)
 
-	return router
+	return app.recoverPanic(router)
+
 }
