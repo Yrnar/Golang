@@ -4,5 +4,5 @@ CREATE TABLE IF NOT EXISTS plantseed (
     name text NOT NULL,
     family text NOT NULL,
     amount integer NOT NULL,
-    price integer NOT NULL
+    price integer NOT NULL,
 );
