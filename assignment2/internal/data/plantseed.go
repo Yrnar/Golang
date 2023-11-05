@@ -1,6 +1,7 @@
 package data
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"time"
@@ -36,21 +37,25 @@ func (m PlantseedModel) Insert(plantseed *Plantseed) error {
 	query := `
 		INSERT INTO plantseed (name, family, amount, price)
 		VALUES ($1, $2, $3, $4)
-		RETURNING id, created_at,`
+		RETURNING id, created_at`
 	args := []interface{}{plantseed.Name, plantseed.Family, plantseed.Amount, plantseed.Price}
-	return m.DB.QueryRow(query, args...).Scan(&plantseed.ID, &plantseed.CreatedAt)
-
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	return m.DB.QueryRowContext(ctx, query, args...).Scan(&plantseed.ID, &plantseed.CreatedAt)
 }
+
 func (m PlantseedModel) Get(id int64) (*Plantseed, error) {
 	if id < 1 {
 		return nil, ErrRecordNotFound
 	}
 	query := `
-		SELECT id, created_at, name, family, amount, price
-		FROM plantseed
-		WHERE id = $1`
+	SELECT id, created_at, name, family, amount, price
+	FROM plantseed
+	WHERE id = $1`
 	var plantseed Plantseed
-	err := m.DB.QueryRow(query, id).Scan(
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	err := m.DB.QueryRowContext(ctx, query, id).Scan(
 		&plantseed.ID,
 		&plantseed.CreatedAt,
 		&plantseed.Name,
@@ -68,28 +73,43 @@ func (m PlantseedModel) Get(id int64) (*Plantseed, error) {
 	}
 	return &plantseed, nil
 }
+
 func (m PlantseedModel) Update(plantseed *Plantseed) error {
 	query := `
-		UPDATE plantseed
-		SET name = $1, family = $2, amount = $3, price = $4
-		WHERE id = $5`
+	UPDATE plantseed
+	SET name = $1, family = $2, amount = $3, price = $4
+	WHERE id = $5`
 	args := []interface{}{
-		&plantseed.Name,
-		&plantseed.Family,
-		&plantseed.Amount,
-		&plantseed.Price,
-		&plantseed.ID,
+		plantseed.Name,
+		plantseed.Family,
+		plantseed.Amount,
+		plantseed.Price,
+		plantseed.ID,
 	}
-	return m.DB.QueryRow(query, args...).Scan()
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan()
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+	return nil
 }
+
 func (m PlantseedModel) Delete(id int64) error {
 	if id < 1 {
 		return ErrRecordNotFound
 	}
 	query := `
-		DELETE FROM plantseed
-		WHERE id = $1`
-	result, err := m.DB.Exec(query, id)
+	DELETE FROM plantseed
+	WHERE id = $1`
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	result, err := m.DB.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}

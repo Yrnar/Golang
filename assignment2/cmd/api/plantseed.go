@@ -67,6 +67,7 @@ func (app *application) showPlantseedHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 }
+
 func (app *application) updatePlantseedHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIDParam(r)
 	if err != nil {
@@ -84,20 +85,28 @@ func (app *application) updatePlantseedHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 	var input struct {
-		Name   string `json:"name"`
-		Family string `json:"family"`
-		Amount int32  `json:"amount"`
-		Price  int32  `json:"price"`
+		Name   *string `json:"name"`
+		Family *string `json:"family"`
+		Amount *int32  `json:"amount"`
+		Price  *int32  `json:"price"`
 	}
 	err = app.readJSON(w, r, &input)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
-	plantseed.Name = input.Name
-	plantseed.Family = input.Family
-	plantseed.Amount = input.Amount
-	plantseed.Price = input.Price
+	if input.Name != nil {
+		plantseed.Name = *input.Name
+	}
+	if input.Family != nil {
+		plantseed.Family = *input.Family
+	}
+	if input.Amount != nil {
+		plantseed.Amount = *input.Amount
+	}
+	if input.Price != nil {
+		plantseed.Price = *input.Price
+	}
 	v := validator.New()
 	if data.ValidateMovie(v, plantseed); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
@@ -105,14 +114,21 @@ func (app *application) updatePlantseedHandler(w http.ResponseWriter, r *http.Re
 	}
 	err = app.models.Plantseed.Update(plantseed)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
 		return
 	}
+
 	err = app.writeJSON(w, http.StatusOK, envelope{"plantseed": plantseed}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
 func (app *application) deletePlantseedHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIDParam(r)
 	if err != nil {

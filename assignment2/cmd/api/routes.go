@@ -13,7 +13,7 @@ func (app *application) routes() *httprouter.Router {
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/plantseed", app.createPlantseedHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/plantseed/:id", app.showPlantseedHandler)
-	router.HandlerFunc(http.MethodPut, "/v1/plantseed/:id", app.updatePlantseedHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/plantseed/:id", app.updatePlantseedHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/plantseed/:id", app.deletePlantseedHandler)
 
 	return router
