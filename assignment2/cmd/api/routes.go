@@ -16,6 +16,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/plantseed/:id", app.showPlantseedHandler)
 	router.HandlerFunc(http.MethodPatch, "/v1/plantseed/:id", app.updatePlantseedHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/plantseed/:id", app.deletePlantseedHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
 
 	return app.recoverPanic(app.rateLimit(router))
 }
