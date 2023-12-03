@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: greenlight
+      POSTGRES_PASSWORD: "pa55word"
+      POSTGRES_DB: greenlight
+    networks:
+      - dev
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+  kaspi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-container
+    environment:
+      - DB_CONNECTION=postgres://greenlight:pa55word@db/greenlight?sslmode=disable
+      - PORT=4000
+    networks:
+      - dev
+    ports:
+      - "4000:4000"
+    depends_on:
+      - db
+
+
+
+networks:
+  dev:
+    driver: bridge
+
+volumes:
+  postgres:
